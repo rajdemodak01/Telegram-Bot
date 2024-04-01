@@ -68,7 +68,10 @@ async function queryOnData(data, date) {
 
 async function addNewPayment(data, newPayment) {
   // newPayment = {paymentAmount:100, paymentDate:"2024-03-05T00:00:00.000Z"}
-  data.payments.push(newPayment);
+  data.payments.push({
+    paymentAmount: newPayment.paymentAmount,
+    paymentDate: new Date(newPayment.paymentDate),
+  });
   data.paymentSummary.totalSpend += newPayment.paymentAmount;
   await queryOnData(data, newPayment.paymentDate);
 }
