@@ -7,6 +7,8 @@ const bot = new TelegramBot(token, { polling: false });
 let amount = null;
 let awaitingAnswer = false;
 let questionMessageId = null;
+let custom_tag=null;
+let prev_msg=null;
 
 // Set webhook
 bot.setWebHook(process.env.DOMAIN + token);
@@ -20,11 +22,11 @@ function handleMessage(msg) {
   const chatId = msg.chat.id;
   const text = msg.text;
   const caption = msg.caption;
-
+  
   if (awaitingAnswer) {
     return;
   }
-
+  
   if (caption && caption.trim() !== "") {
     const match = caption.match(/₹(\d+(\.\d+)?)/);
     if (match) {
@@ -37,15 +39,21 @@ function handleMessage(msg) {
   } else {
     console.log("Caption is undefined or empty.");
   }
-
+  
   // Respond to different types of messages
   if (text === "/start") {
     bot.sendMessage(chatId, "Hello! I am your Telegram bot.");
   } else if (text === "fuck") {
     bot.sendMessage(chatId, "Fuck off");
-  } else if (amount === null) {
+  } else if(text==="custom tag"){
+    bot.sendMessage(chatId,"Enter the tag");
+  }else if(prev_msg==="custom tag"){
+    bot.sendMessage(chatId, "Custom Tag Updated");
+    custom_tag=text;
+  }else if (amount === null) {
     bot.sendMessage(chatId, "Invalid command.");
   }
+  prev_msg=text;
 }
 
 function handleCallbackQuery(callbackQuery) {
@@ -81,7 +89,7 @@ function sendNextQuestion(chatId) {
     const options = [
       [{ text: "Food", callback_data: "food" }],
       [{ text: "Shopping", callback_data: "shopping" }],
-      [{ text: "Other", callback_data: "other" }],
+      [{ text: `${custom_tag}`, callback_data: `${custom_tag}` }],
     ];
     const question = "Choose one option:";
     bot.sendMessage(chatId, question, { reply_markup: { inline_keyboard: options } })
@@ -90,6 +98,7 @@ function sendNextQuestion(chatId) {
       });
   }
 }
+
 
 function handlePollingError(error) {
   console.error(error);
