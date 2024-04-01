@@ -58,7 +58,10 @@ function handleCallbackQuery(callbackQuery) {
   amount = null;
   awaitingAnswer = false;
   if (questionMessageId) {
-    bot.deleteMessage(chatId, questionMessageId);
+    bot.deleteMessage(chatId, questionMessageId)
+      .catch(error => {
+        console.error('Error deleting message:', error.message);
+      });
     questionMessageId = null;
   }
   // fs.appendFile("amount.txt", `${amount} ${choice}\n`, (err) => {
