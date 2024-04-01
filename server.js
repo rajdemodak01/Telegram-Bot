@@ -1,4 +1,5 @@
 const express = require("express");
+const dbConnect = require("./db/index");
 require("dotenv").config();
 const bot = require("./bot");
 const app = express();
@@ -15,4 +16,7 @@ app.get("*", (req, res) => {
 
 app.listen(port, () => {
   console.log(`Server listening at http://localhost:${port}`);
+  dbConnect(process.env.MONGODB_URI).then((err) => {
+    console.log("Mongodb Database connected successfully");
+  });
 });
