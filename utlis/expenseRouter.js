@@ -35,6 +35,10 @@ function checkIfDateToday(d, date) {
 }
 
 async function queryOnData(data, date) {
+  console.log(new Date(date));
+  console.log(new Date());
+  console.log(new Date(data.payments[0].paymentDate));
+
   const payments = data.payments;
 
   const newPayments = payments.filter((p) =>
