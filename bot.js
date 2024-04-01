@@ -16,7 +16,7 @@ bot.on('message', (msg) => {
   // ...
 
   // Send a reply
-  bot.sendMessage(chatId, 'Hello, I am your Telegram bot!');
+  bot.sendMessage(chatId, `Hello, I am your Telegram bot! ${messageText}`);
 });
 
 
