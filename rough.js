@@ -1,18 +1,15 @@
-const moment = require("moment-timezone");
+function getNumberOfDaysInMonth(dateString) {
+  // Split the date string into year and month parts
+  const [year, month] = dateString.split("-");
+  // Create a new Date object for the first day of the next month
+  // (day 0 of the next month will be the last day of the current month)
+  const lastDayOfMonth = new Date(year, month, 0).getDate();
+  // Return the number of days in the month
+  return lastDayOfMonth;
+}
 
-// Unix timestamp
-let timestamp = 1711998007;
+// Example usage:
+const dateString = "2024-03-22"; // Assuming this is your date in YYYY-MM-DD format
+const numberOfDays = getNumberOfDaysInMonth(dateString);
 
-// Convert timestamp to milliseconds
-let date = new Date(timestamp * 1000);
-let date1 = new Date();
-// Convert to a specific time zone (for example, 'America/New_York')
-let formattedDate = moment(date)
-  .tz("Asia/Kolkata")
-  .format("DD-MM-YYYY HH:mm:ss");
-let formattedDate1 = moment(date1)
-  .tz("Asia/Kolkata")
-  .format("DD-MM-YYYY HH:mm:ss");
-
-console.log("Readable Date in Asia/Kolkata time zone:", formattedDate);
-console.log("Readable Date in Asia/Kolkata time zone:", formattedDate1);
+console.log("Number of days in the month:", numberOfDays);

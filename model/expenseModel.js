@@ -19,11 +19,11 @@ const expenseSchema = new mongoose.Schema({
         required: true,
       },
       month: {
-        type: Date,
-        default: () => {
-          const now = new Date();
-          return new Date(now.getFullYear(), now.getMonth(), 1);
-        },
+        type: String,
+        // default: () => {
+        //   const now = new Date();
+        //   return new Date(now.getFullYear(), now.getMonth(), 1);
+        // },
         required: true,
       },
     },
@@ -34,11 +34,11 @@ const expenseSchema = new mongoose.Schema({
         required: true,
       },
       month: {
-        type: Date,
-        default: () => {
-          const now = new Date();
-          return new Date(now.getFullYear(), now.getMonth(), 1);
-        },
+        type: String,
+        // default: () => {
+        //   const now = new Date();
+        //   return new Date(now.getFullYear(), now.getMonth(), 1);
+        // },
         required: true,
       },
     },
@@ -49,11 +49,11 @@ const expenseSchema = new mongoose.Schema({
         required: true,
       },
       date: {
-        type: Date,
-        default: () => {
-          const now = new Date();
-          return new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        },
+        type: String,
+        // default: () => {
+        //   const now = new Date();
+        //   return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        // },
         required: true,
       },
     },
@@ -64,7 +64,7 @@ const expenseSchema = new mongoose.Schema({
         type: Number,
       },
       paymentDate: {
-        type: Date,
+        type: String,
       },
     },
   ],

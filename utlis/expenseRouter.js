@@ -1,20 +1,17 @@
 const expenseModel = require("../model/expenseModel");
+const moment = require("moment");
 
-function checkIfDateInMonth(d, date) {
-  const now = new Date(date);
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const endOfMonth = new Date(
-    now.getFullYear(),
-    now.getMonth() + 1,
-    0,
-    23,
-    59,
-    59,
-    999
-  );
-  const paymentDate = new Date(d);
+function checkIfDateInMonth(oldDate, newDate) {
+  function removeDayFromDate(dateString) {
+    // Split the date string by the dash "-"
+    const parts = dateString.split("-");
+    // Join the parts until the second dash
+    return parts.slice(0, 2).join("-");
+  }
+  const newOld = removeDayFromDate(oldDate);
+  const newNew = removeDayFromDate(newDate);
 
-  if (paymentDate >= startOfMonth && paymentDate <= endOfMonth) {
+  if (newOld === newNew) {
     //   console.log("Payment date is within the current month.");
     return true;
   } else {
@@ -23,25 +20,24 @@ function checkIfDateInMonth(d, date) {
   }
 }
 
-function checkIfDateToday(d, date) {
-  const now = new Date(date);
-  const paymentDate = new Date(d);
-
-  return (
-    paymentDate.getDate() === now.getDate() &&
-    paymentDate.getMonth() === now.getMonth() &&
-    paymentDate.getFullYear() === now.getFullYear()
-  );
+function checkIfDateToday(oldDate, newDate) {
+  if (oldDate === newDate) {
+    return true;
+  } else {
+    return false;
+  }
 }
 
 async function queryOnData(data, date) {
-  console.log(new Date(date));
-  console.log(new Date());
-  console.log(new Date(data.payments[0].paymentDate));
+  //                             YYYY-MM-DD
+  // console.log(new Date(date));
+  // console.log(new Date());
+  // console.log(new Date(data.payments[0].paymentDate));
 
   const payments = data.payments;
 
   const newPayments = payments.filter((p) =>
+    //                 YYYY-MM-DD       YYYY-MM-DD
     checkIfDateInMonth(p.paymentDate, date)
   );
 
@@ -50,7 +46,17 @@ async function queryOnData(data, date) {
     0
   );
 
-  const totalDaysInMonth = new Date(date).getDate();
+  function getNumberOfDaysInMonth(dateString) {
+    // Split the date string into year and month parts
+    const [year, month] = dateString.split("-");
+    // Create a new Date object for the first day of the next month
+    // (day 0 of the next month will be the last day of the current month)
+    const lastDayOfMonth = new Date(year, month, 0).getDate();
+    // Return the number of days in the month
+    return lastDayOfMonth;
+  }
+
+  const totalDaysInMonth = getNumberOfDaysInMonth(date);
   const dailyAverageSpendCurrentMonth =
     totalSpendCurrentMonth / totalDaysInMonth;
 
@@ -62,21 +68,25 @@ async function queryOnData(data, date) {
     0
   );
   data.paymentSummary.totalSpendCurrentMonth.amount = totalSpendCurrentMonth;
-  data.paymentSummary.totalSpendCurrentMonth.month = new Date(date);
+  data.paymentSummary.totalSpendCurrentMonth.month = date;
   data.paymentSummary.dailyAverageSpendCurrentMonth.amount =
     dailyAverageSpendCurrentMonth;
-  data.paymentSummary.dailyAverageSpendCurrentMonth.month = new Date(date);
+  data.paymentSummary.dailyAverageSpendCurrentMonth.month = date;
   data.paymentSummary.totalSpendToday.amount = totalSpendToday;
-  data.paymentSummary.totalSpendToday.date = new Date(date);
+  data.paymentSummary.totalSpendToday.date = date;
 }
 
 async function addNewPayment(data, newPayment) {
-  // newPayment = {paymentAmount:100, paymentDate:"2024-03-05T00:00:00.000Z"}
+  newPayment.paymentDate = moment(new Date(newPayment.paymentDate))
+    .tz("Asia/Kolkata")
+    .format("YYYY-MM-DD");
+
   data.payments.push({
     paymentAmount: newPayment.paymentAmount,
-    paymentDate: new Date(newPayment.paymentDate),
+    paymentDate: newPayment.paymentDate,
   });
   data.paymentSummary.totalSpend += newPayment.paymentAmount;
+  //                        YYYY-MM-DD
   await queryOnData(data, newPayment.paymentDate);
 }
 
