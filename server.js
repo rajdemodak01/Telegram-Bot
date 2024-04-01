@@ -4,6 +4,9 @@ require("dotenv").config();
 const bot = require("./bot");
 const app = express();
 const port = 3000;
+const moment = require("moment-timezone");
+
+moment.tz.setDefault("Asia/Kolkata");
 
 app.use(express.json());
 app.post("*", (req, res) => {
