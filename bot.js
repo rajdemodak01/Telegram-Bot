@@ -52,20 +52,21 @@ function handleCallbackQuery(callbackQuery) {
   const chatId = callbackQuery.message.chat.id;
   const choice = callbackQuery.data;
 
-  fs.appendFile("amount.txt", `${amount} ${choice}\n`, (err) => {
-    if (err) {
-      console.error("Error writing to file:", err);
-    } else {
-      console.log(`${amount} and ${choice} have been written to amount.txt`);
-      bot.sendMessage(chatId, `${amount} and ${choice} Updated`);
-      amount = null;
-      awaitingAnswer = false;
-      if (questionMessageId) {
-        bot.deleteMessage(chatId, questionMessageId);
-        questionMessageId = null;
-      }
-    }
-  });
+  // function(amount,choice);//Rohit write your function here
+  console.log(`${amount} and ${choice} have been written to amount.txt`);
+  bot.sendMessage(chatId, `${amount} and ${choice} Updated`);
+  amount = null;
+  awaitingAnswer = false;
+  if (questionMessageId) {
+    bot.deleteMessage(chatId, questionMessageId);
+    questionMessageId = null;
+  }
+  // fs.appendFile("amount.txt", `${amount} ${choice}\n`, (err) => {
+  //   if (err) {
+  //     console.error("Error writing to file:", err);
+  //   } else {
+  //   }
+  // });
 }
 
 function sendNextQuestion(chatId) {
