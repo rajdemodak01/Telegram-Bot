@@ -54,27 +54,28 @@ function isNumber(text) {
 async function handleMessage(msg) {
   const chatId = msg.chat.id;
   const text = msg.text;
+  const date = msg.date;
   const caption = msg.caption;
-  
-  bot.sendChatAction(chatId, 'typing');
+
+  bot.sendChatAction(chatId, "typing");
   // Respond to different types of messages
   if (text === "/start") {
     bot.sendMessage(chatId, "Hello! I am your Telegram bot.");
   } else if (text === "/show_expenses") {
     fetchDataOfUser(chatId)
-    .then((data) => {
-      if (data) {
-        sendUserExpenseDetail(data, chatId);
-      } else {
-        setTimeout(() => {
-          bot.sendChatAction(chatId, 'typing');
-          // sendUserExpenseDetail(data, chatId);
-                }, 2000); 
-            }
-        })
-        .catch((error) => {
-            console.error('Error fetching data:', error);
-        });
+      .then((data) => {
+        if (data) {
+          sendUserExpenseDetail(data, chatId);
+        } else {
+          setTimeout(() => {
+            bot.sendChatAction(chatId, "typing");
+            // sendUserExpenseDetail(data, chatId);
+          }, 2000);
+        }
+      })
+      .catch((error) => {
+        console.error("Error fetching data:", error);
+      });
   } else if (text === "fuck") {
     bot.sendMessage(chatId, "Fuck off");
   } else if (isNumber(text)) {
@@ -83,7 +84,7 @@ async function handleMessage(msg) {
       .then(async (d) => {
         await addNewPayment(d, {
           paymentAmount: parseFloat(text),
-          paymentDate: new Date(),
+          paymentDate: date * 1000,
         });
         const data = await d.save();
 
@@ -102,7 +103,7 @@ async function handleMessage(msg) {
         .then(async (d) => {
           await addNewPayment(d, {
             paymentAmount: parseFloat(amount),
-            paymentDate: new Date(),
+            paymentDate: date * 1000,
           });
           const data = await d.save();
 

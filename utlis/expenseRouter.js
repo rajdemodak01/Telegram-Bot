@@ -1,7 +1,7 @@
 const expenseModel = require("../model/expenseModel");
 
-function checkIfDateInMonth(d) {
-  const now = new Date();
+function checkIfDateInMonth(d, date) {
+  const now = new Date(date);
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const endOfMonth = new Date(
     now.getFullYear(),
@@ -23,8 +23,8 @@ function checkIfDateInMonth(d) {
   }
 }
 
-function checkIfDateToday(d) {
-  const now = new Date();
+function checkIfDateToday(d, date) {
+  const now = new Date(date);
   const paymentDate = new Date(d);
 
   return (
@@ -34,38 +34,46 @@ function checkIfDateToday(d) {
   );
 }
 
-async function queryOnData(data) {
+async function queryOnData(data, date) {
   const payments = data.payments;
 
-  const newPayments = payments.filter((p) => checkIfDateInMonth(p.paymentDate));
+  const newPayments = payments.filter((p) =>
+    checkIfDateInMonth(p.paymentDate, date)
+  );
 
   const totalSpendCurrentMonth = newPayments.reduce(
     (acc, curr) => acc + curr.paymentAmount,
     0
   );
-  const totalDaysInMonth = new Date().getDate();
+
+  const totalDaysInMonth = new Date(date).getDate();
   const dailyAverageSpendCurrentMonth =
     totalSpendCurrentMonth / totalDaysInMonth;
 
-  const forDay = newPayments.filter((p) => checkIfDateToday(p.paymentDate));
+  const forDay = newPayments.filter((p) =>
+    checkIfDateToday(p.paymentDate, date)
+  );
   const totalSpendToday = forDay.reduce(
     (acc, curr) => acc + curr.paymentAmount,
     0
   );
   data.paymentSummary.totalSpendCurrentMonth.amount = totalSpendCurrentMonth;
+  data.paymentSummary.totalSpendCurrentMonth.month = new Date(date);
   data.paymentSummary.dailyAverageSpendCurrentMonth.amount =
     dailyAverageSpendCurrentMonth;
+  data.paymentSummary.dailyAverageSpendCurrentMonth.month = new Date(date);
   data.paymentSummary.totalSpendToday.amount = totalSpendToday;
+  data.paymentSummary.totalSpendToday.date = new Date(date);
 }
 
 async function addNewPayment(data, newPayment) {
   // newPayment = {paymentAmount:100, paymentDate:"2024-03-05T00:00:00.000Z"}
   data.payments.push(newPayment);
   data.paymentSummary.totalSpend += newPayment.paymentAmount;
-  await queryOnData(data);
+  await queryOnData(data, newPayment.paymentDate);
 }
 
-async function fetchDataOfUser(username, newPayment = {}) {
+async function fetchDataOfUser(username) {
   try {
     // const result = await expenseModel.aggregate([
     //   { $match: { username } },
