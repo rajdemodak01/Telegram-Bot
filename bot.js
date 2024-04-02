@@ -58,26 +58,35 @@ async function handleMessage(msg) {
   const caption = msg.caption;
 
   bot.sendChatAction(chatId, "typing");
-  // Respond to different types of messages
-  if (text === "/start") {
-    bot.sendMessage(chatId, "Hello! I am your Telegram bot.");
-  } else if (text === "/show_expenses") {
+  //Respond to different types of messages
+  if (text === "/start" || text==="Start") {
+    const firstName = msg.from.first_name;
+    const welcomeMessage = `Hello, ${firstName}! Welcome to our Telegram bot. Feel free to explore the available commands.`;
+    // bot.sendMessage(chatId, welcomeMessage);
+    bot.sendMessage(chatId, welcomeMessage, { reply_markup: { remove_keyboard: true } });
+  } else if (text === "/show_expenses" || text=="Show Expenses") {
     fetchDataOfUser(chatId)
-      .then((data) => {
-        if (data) {
-          sendUserExpenseDetail(data, chatId);
-        } else {
-          setTimeout(() => {
-            bot.sendChatAction(chatId, "typing");
-            // sendUserExpenseDetail(data, chatId);
-          }, 2000);
-        }
-      })
-      .catch((error) => {
-        console.error("Error fetching data:", error);
-      });
+    .then((data) => {
+      if (data) {
+        sendUserExpenseDetail(data, chatId);
+        bot.sendMessage(chatId, 'These are your expenses.', {reply_markup: {remove_keyboard: true}});
+      } else {
+        setTimeout(() => {
+          bot.sendChatAction(chatId, "typing");
+          // sendUserExpenseDetail(data, chatId);
+        }, 2000);
+      }
+    })
+    .catch((error) => {
+      console.error("Error fetching data:", error);
+    });
   } else if (text === "fuck") {
-    bot.sendMessage(chatId, "Fuck off");
+    const commandsKeyboard = [
+      [{ text: 'Start' }],
+      [{ text: 'Show Expenses'}]
+    ];
+    bot.sendMessage(chatId, 'Fuck off', { reply_markup: { keyboard: commandsKeyboard } });
+  
   } else if (isNumber(text)) {
     console.log(text);
     fetchDataOfUser(chatId)
