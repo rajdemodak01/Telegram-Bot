@@ -6,16 +6,14 @@ const token = process.env.TOKEN;
 const bot = new TelegramBot(token, { polling: false });
 
 let amount = null;
-// let awaitingAnswer = false;
 let questionMessageId = null;
 // let custom_tag = null;
-// let prev_msg = null;
 
 // Set webhook
 bot.setWebHook(process.env.DOMAIN + token);
 const commands = [
-    // { command: "start", description: "Start the bot" },
-    // { command: "help", description: "Get help" },
+    { command: "start", description: "Start the bot" },
+    { command: "help", description: "Get help" },
     {
         command: "show_expenses",
         description: "This command will show your expenses",
@@ -59,7 +57,6 @@ async function handleMessage(msg) {
     const text = msg.text;
     const date = msg.date;
     const caption = msg.caption;
-    console.log(text);
 
     bot.sendChatAction(chatId, "typing");
     if (text === "/start" || text === "Start") {
@@ -73,9 +70,6 @@ async function handleMessage(msg) {
             .then((data) => {
                 if (data) {
                     sendUserExpenseDetail(data, chatId);
-                    // bot.sendMessage(chatId, "These are your expenses.", {
-                    //     reply_markup: { remove_keyboard: true },
-                    // });
                 } else {
                     bot.sendMessage(
                         chatId,
@@ -89,101 +83,48 @@ async function handleMessage(msg) {
             .catch((error) => {
                 console.error("Error fetching data:", error);
             });
-    } else if (text === "fuck") {
-        const commandsKeyboard = [
-            [{ text: "Start" }],
-            [{ text: "Show Expenses" }],
-        ];
-        bot.sendMessage(chatId, "Fuck off", {
-            reply_markup: { keyboard: commandsKeyboard },
-        });
+    } else if (text === "help" || text === "help") {
+        // const commandsKeyboard = [
+        //     [{ text: "Start" }],
+        //     [{ text: "Show Expenses" }],
+        // ];
+        // bot.sendMessage(chatId, "Fuck off", {
+        //     reply_markup: { keyboard: commandsKeyboard },
+        // });
+        //we have to write the help here
     } else if (isNumber(text)) {
-        console.log(text);
         amount = text;
         sendNextQuestion(chatId);
     } else if (caption && caption.trim() !== "") {
         const match = caption.match(/₹(\d+(\.\d+)?)/);
         if (match) {
             amount = parseFloat(match[1]);
-            console.log(amount);
             sendNextQuestion(chatId);
-        }
-    } else if (amount) {
-        bot.sendMessage(chatId, "Set successfully", {
-            reply_markup: { remove_keyboard: true },
-        });
-        try {
-            // const d = await fetchDataOfUser(chatId);
-            // const data = await d.save();
-            const data = await addNewPayment(
-                chatId,
-                parseFloat(amount),
-                text.toLowerCase()
-            );
-            sendUserExpenseDetail(data, chatId);
-        } catch (error) {
-            console.log(error);
-            bot.sendMessage(chatId, "there was an error saving this payment");
         }
     } else {
         bot.sendMessage(chatId, "Invalid text.");
-        // if (questionMessageId) {
-        //     bot.deleteMessage(chatId, questionMessageId)
-        //         .then(() => {
-        //             console.log("Message deleted successfully");
-        //             questionMessageId = null;
-        //         })
-        //         .catch((error) => {
-        //             console.error("Error deleting message:", error.message);
-        //         });
-        // }
     }
 }
 
 async function handleCallbackQuery(callbackQuery, amount) {
-    const date = callbackQuery.message.date;
-
     const chatId = callbackQuery.message.chat.id;
     const choice = callbackQuery.data;
 
-    // if(amount===null){
-    //   fetchDataOfUser(chatId)
-    //     .then((data) => {
-    //       if (data) {
-    //         sendUserExpenseDetail(data, chatId);
-    //       } else {
-    //         setTimeout(() => {
-    //           bot.sendChatAction(chatId, "typing");
-    //           // sendUserExpenseDetail(data, chatId);
-    //         }, 2000);
-    //       }
-    //     })
-    //     .catch((error) => {
-    //       console.error("Error fetching data:", error);
-    //     });
-    // }
-
-    // function(amount,choice);//Rohit write your function here
-    console.log(`${amount} and ${choice} have been written to amount.txt`);
-    bot.sendMessage(chatId, `${amount} and ${choice} Updated`);
-    // awaitingAnswer = false;
+    console.log(`${amount} and ${choice}`);
+    // bot.sendMessage(chatId, choice);
+    bot.sendMessage(chatId, `_${choice}_`, { parse_mode: "Markdown" });
 
     try {
-        const d = await fetchDataOfUser(chatId);
-        await addNewPayment(d, {
-            paymentAmount: parseFloat(amount),
-            paymentDate: date * 1000,
-            paymentTag: choice,
-        });
-        const data = await d.save();
-
+        const data = await addNewPayment(
+            chatId,
+            parseFloat(amount),
+            choice.toLowerCase()
+        );
         sendUserExpenseDetail(data, chatId);
     } catch (error) {
         console.log(error);
         bot.sendMessage(chatId, "there was an error saving this payment");
     }
-    // bot.sendMessage(chatId, amount);
-    console.log(amount);
     amount = null;
     if (questionMessageId) {
         bot.deleteMessage(chatId, questionMessageId)
@@ -198,29 +139,19 @@ async function handleCallbackQuery(callbackQuery, amount) {
 }
 
 function sendNextQuestion(chatId) {
-    // const options = [
-    //     [{ text: "Food", callback_data: "food" }],
-    //     [{ text: "Travel", callback_data: "travel" }],
-    //     [{ text: "Essential", callback_data: "essential" }],
-    //     [{ text: "Others", callback_data: "others" }],
-    //     // [{ text: `${custom_tag}`, callback_data: `${custom_tag}` }],
-    // ];
-    // const question = "Choose one option:";
-    // bot.sendMessage(chatId, question, {
-    //     reply_markup: { inline_keyboard: options },
-    // }).then((message) => {
-    //     questionMessageId = message.message_id;
-    // });
-
-    const commandsKeyboard = [
-        [{ text: "Food" }],
-        [{ text: "Travel" }],
-        [{ text: "Essential" }],
-        [{ text: "Education" }],
-        [{ text: "Others" }],
+    const options = [
+        [{ text: "Food", callback_data: "Food" }],
+        [{ text: "Travel", callback_data: "Travel" }],
+        [{ text: "Essential", callback_data: "Essential" }],
+        [{ text: "Education", callback_data: "Education" }],
+        [{ text: "Others", callback_data: "Others" }],
+        // [{ text: `${custom_tag}`, callback_data: `${custom_tag}` }],
     ];
-    bot.sendMessage(chatId, "Choose one option", {
-        reply_markup: { keyboard: commandsKeyboard },
+    const question = "Choose one option:";
+    bot.sendMessage(chatId, question, {
+        reply_markup: { inline_keyboard: options },
+    }).then((message) => {
+        questionMessageId = message.message_id;
     });
 }
 
