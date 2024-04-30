@@ -1,158 +1,182 @@
 const expenseModel = require("../model/expenseModel");
-const moment = require("moment");
+const moment = require("moment-timezone");
 
-function checkIfDateInMonth(oldDate, newDate) {
-  function removeDayFromDate(dateString) {
-    // Split the date string by the dash "-"
-    const parts = dateString.split("-");
-    // Join the parts until the second dash
-    return parts.slice(0, 2).join("-");
-  }
-  const newOld = removeDayFromDate(oldDate);
-  const newNew = removeDayFromDate(newDate);
-
-  if (newOld === newNew) {
-    //   console.log("Payment date is within the current month.");
-    return true;
-  } else {
-    // console.log("Payment date is not within the current month.");
-    return false;
-  }
+function getCurrentDateFormatted() {
+    const currentDate = moment.tz(new Date(), "Asia/Kolkata");
+    const formattedDate = currentDate.format("YYYY-MM-DD");
+    return formattedDate;
 }
 
-function checkIfDateToday(oldDate, newDate) {
-  if (oldDate === newDate) {
-    return true;
-  } else {
-    return false;
-  }
+function extractYearMonthFromDate(dateString) {
+    // Assuming dateString is in the format "YYYY-MM-DD"
+    return dateString.substring(0, 7); // Extract the first 7 characters (YYYY-MM)
 }
 
-async function queryOnData(data, date) {
-  //                             YYYY-MM-DD
-  // console.log(new Date(date));
-  // console.log(new Date());
-  // console.log(new Date(data.payments[0].paymentDate));
-
-  const payments = data.payments;
-
-  const newPayments = payments.filter((p) =>
-    //                 YYYY-MM-DD       YYYY-MM-DD
-    checkIfDateInMonth(p.paymentDate, date)
-  );
-
-  const totalSpendCurrentMonth = newPayments.reduce(
-    (acc, curr) => acc + curr.paymentAmount,
-    0
-  );
-
-  const totalDaysInMonth = Number(date.split("-")[2]);
-  const dailyAverageSpendCurrentMonth =
-    totalSpendCurrentMonth / totalDaysInMonth;
-
-  const forDay = newPayments.filter((p) =>
-    checkIfDateToday(p.paymentDate, date)
-  );
-  const totalSpendToday = forDay.reduce(
-    (acc, curr) => acc + curr.paymentAmount,
-    0
-  );
-  data.paymentSummary.totalSpendCurrentMonth.amount = totalSpendCurrentMonth;
-  data.paymentSummary.totalSpendCurrentMonth.month = date;
-  data.paymentSummary.dailyAverageSpendCurrentMonth.amount =
-    dailyAverageSpendCurrentMonth;
-  data.paymentSummary.dailyAverageSpendCurrentMonth.month = date;
-  data.paymentSummary.totalSpendToday.amount = totalSpendToday;
-  data.paymentSummary.totalSpendToday.date = date;
+function extractYearMonthDayFromDate(dateString) {
+    // Assuming dateString is in the format "YYYY-MM-DD"
+    const [year, month, day] = dateString.split("-").map(Number);
+    return { year, month, day };
 }
 
-async function addNewPayment(data, newPayment) {
-  newPayment.paymentDate = moment(new Date(newPayment.paymentDate))
-    .tz("Asia/Kolkata")
-    .format("YYYY-MM-DD");
+function handleDateChange(user) {
+    const currentDate = getCurrentDateFormatted();
+    user.dailySpend.date = currentDate;
+    user.dailySpend.totalSpend = 0;
 
-  data.payments.push({
-    paymentAmount: newPayment.paymentAmount,
-    paymentDate: newPayment.paymentDate,
-  });
-  data.paymentSummary.totalSpend += newPayment.paymentAmount;
-  //                        YYYY-MM-DD
-  await queryOnData(data, newPayment.paymentDate);
+    user.tagSpend.forEach((tag) => {
+        (tag.dailySpend.date = currentDate), (tag.dailySpend.totalSpend = 0);
+    });
+
+    return user;
+}
+
+function handleMonthChange(user) {
+    const currentDate = getCurrentDateFormatted();
+    user.monthlySpend.month = extractYearMonthFromDate(currentDate);
+    (user.monthlySpend.totalSpend = 0), (user.monthlySpend.averageSpend = 0);
+
+    user.tagSpend.forEach((tag) => {
+        (tag.monthlySpend.month = extractYearMonthFromDate(currentDate)),
+            (tag.monthlySpend.totalSpend = 0),
+            (tag.monthlySpend.averageSpend = 0);
+    });
+
+    return user;
+}
+
+async function addNewPayment(username, paymentAmount, paymentTag) {
+    const currentDate = getCurrentDateFormatted();
+    let user = await expenseModel.findOne({ username });
+
+    if (!user) {
+        user = await createExpense(username);
+    }
+
+    //first check if the month in changed
+
+    if (user.monthlySpend.month !== extractYearMonthFromDate(currentDate)) {
+        user = handleMonthChange(user);
+    }
+
+    //second check if the date in changed
+
+    if (user.dailySpend.date !== currentDate) {
+        user = handleDateChange(user);
+    }
+
+    user.totalSpend += paymentAmount;
+    user.monthlySpend.totalSpend += paymentAmount;
+    user.monthlySpend.averageSpend +=
+        paymentAmount / extractYearMonthDayFromDate(currentDate).day;
+
+    user.dailySpend.totalSpend += paymentAmount;
+
+    user.tagSpend.forEach((tag) => {
+        if (tag.tagName === paymentTag) {
+            tag.totalSpend += paymentAmount;
+            tag.monthlySpend.totalSpend += paymentAmount;
+            tag.monthlySpend.averageSpend +=
+                paymentAmount / extractYearMonthDayFromDate(currentDate).day;
+
+            tag.dailySpend.totalSpend += paymentAmount;
+        }
+    });
+
+    const data = await user.save();
+
+    return data;
 }
 
 async function fetchDataOfUser(username) {
-  try {
-    // const result = await expenseModel.aggregate([
-    //   { $match: { username } },
-    //   {
-    //     $unwind: "$payments",
-    //   },
-    //   {
-    //     $match: {
-    //       "payments.paymentDate": {
-    //         $gte: startOfMonth,
-    //         $lte: endOfMonth,
-    //       },
-    //     },
-    //   },
-    //   {
-    //     $group: {
-    //       _id: null,
-    //       payments: { $push: "$payments" },
-    //     },
-    //   },
-    //   {
-    //     $project: {
-    //       _id: 0,
-    //       payments: 1,
-    //     },
-    //   },
-    // ]);
+    const user = await expenseModel.findOne({ username });
 
-    const expenseDocument = await expenseModel.findOne({ username });
-    // await addNewPayment(expenseDocument, newPayment);
-    // const result = await expenseDocument.save();
-    if (expenseDocument) {
-      return expenseDocument;
-    } else {
-      const data = await expenseModel({
-        username,
-        paymentSummary: {},
-        payments: [],
-      });
-      return data;
-    }
-  } catch (error) {
-    throw error;
-  }
+    return user;
 }
 
-// router.post("/", (req, res) => {
-//   const username = req.body.username;
-//   const paymentAmount = req.body.paymentAmount;
-//   const paymentDate = req.body.paymentDate;
-//   fetchDataOfUser(username)
-//     .then(async (data) => {
-//       await addNewPayment(data, { paymentAmount, paymentDate });
-//       const newData = await data.save();
-//       res.json(newData);
-//     })
-//     .catch((error) => {
-//       console.log(error);
-//       res.json(error);
-//     });
-// });
+async function createExpense(username) {
+    const currentDate = getCurrentDateFormatted();
+    const user = new expenseModel({
+        username: username,
+        totalSpend: 0,
+        monthlySpend: {
+            month: extractYearMonthFromDate(currentDate),
+            totalSpend: 0,
+            averageSpend: 0,
+        },
+        dailySpend: {
+            date: currentDate,
+            totalSpend: 0,
+        },
+        tagSpend: [
+            {
+                tagName: "food",
+                totalSpend: 0,
+                monthlySpend: {
+                    month: extractYearMonthFromDate(currentDate),
+                    totalSpend: 0,
+                    averageSpend: 0,
+                },
+                dailySpend: {
+                    date: currentDate,
+                    totalSpend: 0,
+                },
+            },
+            {
+                tagName: "travel",
+                totalSpend: 0,
+                monthlySpend: {
+                    month: extractYearMonthFromDate(currentDate),
+                    totalSpend: 0,
+                    averageSpend: 0,
+                },
+                dailySpend: {
+                    date: currentDate,
+                    totalSpend: 0,
+                },
+            },
+            {
+                tagName: "essential",
+                totalSpend: 0,
+                monthlySpend: {
+                    month: extractYearMonthFromDate(currentDate),
+                    totalSpend: 0,
+                    averageSpend: 0,
+                },
+                dailySpend: {
+                    date: currentDate,
+                    totalSpend: 0,
+                },
+            },
+            {
+                tagName: "education",
+                totalSpend: 0,
+                monthlySpend: {
+                    month: extractYearMonthFromDate(currentDate),
+                    totalSpend: 0,
+                    averageSpend: 0,
+                },
+                dailySpend: {
+                    date: currentDate,
+                    totalSpend: 0,
+                },
+            },
+            {
+                tagName: "others",
+                totalSpend: 0,
+                monthlySpend: {
+                    month: extractYearMonthFromDate(currentDate),
+                    totalSpend: 0,
+                    averageSpend: 0,
+                },
+                dailySpend: {
+                    date: currentDate,
+                    totalSpend: 0,
+                },
+            },
+        ],
+    });
 
-// router.post("/find", (req, res) => {
-//   const username = req.body.username;
-//   fetchDataOfUser(username)
-//     .then(async (data) => {
-//       res.json(data);
-//     })
-//     .catch((err) => {
-//       console.log(err);
-//       res.json(err);
-//     });
-// });
+    return user;
+}
 
-module.exports = { fetchDataOfUser, addNewPayment };
+module.exports = { addNewPayment, fetchDataOfUser };

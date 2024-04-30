@@ -1,73 +1,70 @@
 const mongoose = require("mongoose");
 
 const expenseSchema = new mongoose.Schema({
-  username: {
-    type: String,
-    required: true,
-    unique: true,
-  },
-  paymentSummary: {
+    username: {
+        type: String,
+        required: true,
+        unique: true,
+    },
     totalSpend: {
-      type: Number,
-      default: 0,
-      required: true,
-    },
-    totalSpendCurrentMonth: {
-      amount: {
         type: Number,
         default: 0,
-        required: true,
-      },
-      month: {
-        type: String,
-        // default: () => {
-        //   const now = new Date();
-        //   return new Date(now.getFullYear(), now.getMonth(), 1);
-        // },
-        required: true,
-      },
     },
-    dailyAverageSpendCurrentMonth: {
-      amount: {
-        type: Number,
-        default: 0,
-        required: true,
-      },
-      month: {
-        type: String,
-        // default: () => {
-        //   const now = new Date();
-        //   return new Date(now.getFullYear(), now.getMonth(), 1);
-        // },
-        required: true,
-      },
+    monthlySpend: {
+        month: {
+            type: String,
+        },
+        totalSpend: {
+            type: Number,
+            default: 0,
+        },
+        averageSpend: {
+            type: Number,
+            default: 0,
+        },
     },
-    totalSpendToday: {
-      amount: {
-        type: Number,
-        default: 0,
-        required: true,
-      },
-      date: {
-        type: String,
-        // default: () => {
-        //   const now = new Date();
-        //   return new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        // },
-        required: true,
-      },
+    dailySpend: {
+        date: {
+            type: String,
+        },
+        totalSpend: {
+            type: Number,
+            default: 0,
+        },
     },
-  },
-  payments: [
-    {
-      paymentAmount: {
-        type: Number,
-      },
-      paymentDate: {
-        type: String,
-      },
-    },
-  ],
+    tagSpend: [
+        {
+            tagName: {
+                type: String,
+            },
+            totalSpend: {
+                type: Number,
+                default: 0,
+            },
+            monthlySpend: {
+                month: {
+                    type: String,
+                },
+                totalSpend: {
+                    type: Number,
+                    default: 0,
+                },
+                averageSpend: {
+                    type: Number,
+                    default: 0,
+                },
+            },
+            dailySpend: {
+                date: {
+                    type: String,
+                },
+                totalSpend: {
+                    type: Number,
+                    default: 0,
+                },
+            },
+        },
+    ],
 });
 
 const Expense = mongoose.model("Expense", expenseSchema);
