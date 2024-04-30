@@ -10,7 +10,13 @@ let questionMessageId = null;
 // let custom_tag = null;
 
 // Set webhook
-bot.setWebHook(process.env.DOMAIN + token);
+
+try {
+    bot.setWebHook(process.env.DOMAIN + token);
+} catch (e) {
+    console.log("error in web hook", e);
+}
+
 const commands = [
     { command: "start", description: "Start the bot" },
     { command: "help", description: "Get help" },
