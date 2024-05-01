@@ -5,7 +5,6 @@ const TelegramBot = require("node-telegram-bot-api");
 const token = process.env.TOKEN;
 const bot = new TelegramBot(token, { polling: false });
 
-let amount = null;
 let questionMessageId = null;
 // let custom_tag = null;
 
@@ -20,6 +19,10 @@ try {
 const commands = [
     { command: "start", description: "Start the bot" },
     { command: "help", description: "Get help" },
+    {
+        command: "show_tag_expenses",
+        description: "This command will show the expenses by tag",
+    },
     {
         command: "show_expenses",
         description: "This command will show your expenses",
@@ -36,7 +39,12 @@ bot.setMyCommands(commands)
 // Handle incoming messages
 bot.on("message", handleMessage);
 bot.on("callback_query", (callbackQuery) => {
-    handleCallbackQuery(callbackQuery, amount);
+    const data = callbackQuery.data;
+    if (data.split("-")[1] === "tag") {
+        showTagExpenses(callbackQuery);
+    } else {
+        handleCallbackQuery(callbackQuery, parseFloat(data.split("-")[1]));
+    }
 });
 
 bot.on("polling_error", handlePollingError);
@@ -89,7 +97,7 @@ async function handleMessage(msg) {
             .catch((error) => {
                 console.error("Error fetching data:", error);
             });
-    } else if (text === "help" || text === "help") {
+    } else if (text === "help" || text === "/help") {
         // const commandsKeyboard = [
         //     [{ text: "Start" }],
         //     [{ text: "Show Expenses" }],
@@ -97,16 +105,19 @@ async function handleMessage(msg) {
         // bot.sendMessage(chatId, "Fuck off", {
         //     reply_markup: { keyboard: commandsKeyboard },
         // });
-        //we have to write the help here
+        bot.sendMessage(
+            chatId,
+            "Simply type the amount you spend and a option for tags will be given, choose one option and the payment will be saved with that tag. Now to show you expenses use the command /show_expenses and to show specific tag expenses use the command /show_tag_expenses.\n\nFor any suggestion or error you find, write to rajgobindadham@gmail.com or rohitt24k@gmail.com"
+        );
     } else if (isNumber(text)) {
-        amount = text;
-        sendNextQuestion(chatId);
+        sendNextQuestion(chatId, text);
     } else if (caption && caption.trim() !== "") {
         const match = caption.match(/₹(\d+(\.\d+)?)/);
         if (match) {
-            amount = parseFloat(match[1]);
-            sendNextQuestion(chatId);
+            sendNextQuestion(chatId, parseFloat(match[1]));
         }
+    } else if (text === "show_tag_expenses" || text === "/show_tag_expenses") {
+        sendNextQuestion(chatId, "tag");
     } else {
         bot.sendMessage(chatId, "Invalid text.");
     }
@@ -114,7 +125,7 @@ async function handleMessage(msg) {
 
 async function handleCallbackQuery(callbackQuery, amount) {
     const chatId = callbackQuery.message.chat.id;
-    const choice = callbackQuery.data;
+    const choice = callbackQuery.data.split("-")[0];
 
     console.log(`${amount} and ${choice}`);
     // bot.sendMessage(chatId, choice);
@@ -144,13 +155,48 @@ async function handleCallbackQuery(callbackQuery, amount) {
     }
 }
 
-function sendNextQuestion(chatId) {
+async function showTagExpenses(callbackQuery) {
+    const chatId = callbackQuery.message.chat.id;
+    const choice = callbackQuery.data.split("-")[0];
+    console.log(`${choice} - this is showing tag expenses`);
+    bot.sendMessage(chatId, `_${choice}_`, { parse_mode: "Markdown" });
+
+    fetchDataOfUser(chatId)
+        .then((data) => {
+            if (data) {
+                sendUserExpenseDetail(
+                    data.tagSpend.find(
+                        (d) => d.tagName === choice.toLowerCase()
+                    ),
+                    chatId
+                );
+            } else {
+                bot.sendMessage(chatId, "You don't have any expenses to show");
+            }
+        })
+        .catch((error) => {
+            console.error("Error fetching data:", error);
+        });
+
+    if (questionMessageId) {
+        bot.deleteMessage(chatId, questionMessageId)
+            .then(() => {
+                console.log("Message deleted successfully");
+                questionMessageId = null;
+            })
+            .catch((error) => {
+                console.error("Error deleting message:", error.message);
+            });
+    }
+}
+
+function sendNextQuestion(chatId, amount) {
     const options = [
-        [{ text: "Food", callback_data: "Food" }],
-        [{ text: "Travel", callback_data: "Travel" }],
-        [{ text: "Essential", callback_data: "Essential" }],
-        [{ text: "Education", callback_data: "Education" }],
-        [{ text: "Others", callback_data: "Others" }],
+        [{ text: "Food", callback_data: `Food-${amount}` }],
+        [{ text: "Travel", callback_data: `Travel-${amount}` }],
+        [{ text: "Essential", callback_data: `Essential-${amount}` }],
+        [{ text: "Education", callback_data: `Education-${amount}` }],
+        [{ text: "Others", callback_data: `Others-${amount}` }],
         // [{ text: `${custom_tag}`, callback_data: `${custom_tag}` }],
     ];
     const question = "Choose one option:";
