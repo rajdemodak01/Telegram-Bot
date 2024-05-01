@@ -40,10 +40,10 @@ bot.setMyCommands(commands)
 bot.on("message", handleMessage);
 bot.on("callback_query", (callbackQuery) => {
     const data = callbackQuery.data;
-    if (data.split("-")[1] === "tag") {
+    if (data.split("_")[1] === "tag") {
         showTagExpenses(callbackQuery);
     } else {
-        handleCallbackQuery(callbackQuery, parseFloat(data.split("-")[1]));
+        handleCallbackQuery(callbackQuery, parseFloat(data.split("_")[1]));
     }
 });
 
@@ -125,7 +125,7 @@ async function handleMessage(msg) {
 
 async function handleCallbackQuery(callbackQuery, amount) {
     const chatId = callbackQuery.message.chat.id;
-    const choice = callbackQuery.data.split("-")[0];
+    const choice = callbackQuery.data.split("_")[0];
 
     console.log(`${amount} and ${choice}`);
     // bot.sendMessage(chatId, choice);
@@ -157,7 +157,7 @@ async function handleCallbackQuery(callbackQuery, amount) {
 
 async function showTagExpenses(callbackQuery) {
     const chatId = callbackQuery.message.chat.id;
-    const choice = callbackQuery.data.split("-")[0];
+    const choice = callbackQuery.data.split("_")[0];
     console.log(`${choice} - this is showing tag expenses`);
     bot.sendMessage(chatId, `_${choice}_`, { parse_mode: "Markdown" });
 
@@ -192,11 +192,11 @@ async function showTagExpenses(callbackQuery) {
 
 function sendNextQuestion(chatId, amount) {
     const options = [
-        [{ text: "Food", callback_data: `Food-${amount}` }],
-        [{ text: "Travel", callback_data: `Travel-${amount}` }],
-        [{ text: "Essential", callback_data: `Essential-${amount}` }],
-        [{ text: "Education", callback_data: `Education-${amount}` }],
-        [{ text: "Others", callback_data: `Others-${amount}` }],
+        [{ text: "Food", callback_data: `Food_${amount}` }],
+        [{ text: "Travel", callback_data: `Travel_${amount}` }],
+        [{ text: "Essential", callback_data: `Essential_${amount}` }],
+        [{ text: "Education", callback_data: `Education_${amount}` }],
+        [{ text: "Others", callback_data: `Others_${amount}` }],
         // [{ text: `${custom_tag}`, callback_data: `${custom_tag}` }],
     ];
     const question = "Choose one option:";
