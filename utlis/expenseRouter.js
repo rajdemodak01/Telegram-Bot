@@ -66,8 +66,8 @@ async function addNewPayment(username, paymentAmount, paymentTag) {
 
     user.totalSpend += paymentAmount;
     user.monthlySpend.totalSpend += paymentAmount;
-    user.monthlySpend.averageSpend +=
-        paymentAmount / extractYearMonthDayFromDate(currentDate).day;
+    user.monthlySpend.averageSpend =
+        user.totalSpend / extractYearMonthDayFromDate(currentDate).day;
 
     user.dailySpend.totalSpend += paymentAmount;
 
@@ -75,8 +75,8 @@ async function addNewPayment(username, paymentAmount, paymentTag) {
         if (tag.tagName === paymentTag) {
             tag.totalSpend += paymentAmount;
             tag.monthlySpend.totalSpend += paymentAmount;
-            tag.monthlySpend.averageSpend +=
-                paymentAmount / extractYearMonthDayFromDate(currentDate).day;
+            tag.monthlySpend.averageSpend =
+                tag.totalSpend / extractYearMonthDayFromDate(currentDate).day;
 
             tag.dailySpend.totalSpend += paymentAmount;
         }
